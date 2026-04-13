@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUpSchema } from "@/lib/validators/auth";
+import { registerAction } from "@/server/actions/auth";
+import { getErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -49,31 +51,21 @@ export function SignUpForm() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/trpc/auth.register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: parsed.data.email,
-          password: parsed.data.password,
-          confirmPassword: parsed.data.confirmPassword,
-        }),
-      });
-
-      if (!res.ok) {
-        const json = (await res.json()) as { error?: { message?: string } };
-        setErrors({ form: json.error?.message ?? "Registration failed. Please try again." });
+      const result = await registerAction(parsed.data);
+      if (!result.success) {
+        setErrors({ form: getErrorMessage(result.code) });
         setLoading(false);
         return;
       }
 
       // Auto sign-in after successful registration
-      const result = await signIn("credentials", {
+      const signInResult = await signIn("credentials", {
         email: parsed.data.email,
         password: parsed.data.password,
         redirect: false,
       });
 
-      if (result?.error) {
+      if (signInResult?.error) {
         setErrors({ form: "Account created. Please sign in." });
         router.push("/sign-in");
         return;

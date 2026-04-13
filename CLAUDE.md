@@ -439,13 +439,118 @@ pnpm dev              # Start dev server
 
 ---
 
-## 13. Phase 3: Ready for Future Development
+## 13. Phase 3: Complete Auth Flow (✅ COMPLETED)
 
-Once the Go backend (`velotrax-gateway-go`) is ready:
+### 13.1 Scope
+- [x] Fix `src/server/actions/auth.ts` — remove broken client import, implement server-side sign-out and register actions
+- [x] Fix `src/components/auth/sign-up-form.tsx` — replace raw fetch with `registerAction` server action
+- [x] Wire up user input → server action → tRPC → gateway/mock for registration
+- [x] Centralize error messages via `getErrorMessage(code)` for all auth flows
 
-1. **Remove `MOCK_GATEWAY` env flag** from `.env.local`
-2. **Generate types** from Go OpenAPI spec: `pnpm generate:types`
-3. **Verify contract** — all mock responses should match generated types
-4. **Switch to real gateway** — no code changes needed, just disable mock mode
+### 13.2 Changes
+
+**`src/server/actions/auth.ts` (complete rewrite):**
+- Removed: `import { signOut } from "next-auth/react"` (client module in server context — build error)
+- Fixed: `signOutAction()` now redirects to `/api/auth/signout?callbackUrl=/` (NextAuth built-in endpoint)
+- Added: `registerAction(input: SignUpInput)` → calls `createServerCaller()` → `caller.auth.register()` → `gatewayFetch("/auth/register", ...)`
+- Error handling: Catches `TRPCError`, extracts error code, returns discriminated union `{ success: true } | { success: false; code: TRPC_ERROR_CODE_KEY; message: string }`
+
+**`src/components/auth/sign-up-form.tsx` (imports + handleSubmit):**
+- Added: `import { registerAction } from "@/server/actions/auth"`
+- Added: `import { getErrorMessage } from "@/lib/errors"`
+- Replaced: Raw `fetch("/api/trpc/auth.register", ...)` with `await registerAction(parsed.data)`
+- Error mapping: Now uses `getErrorMessage(result.code)` for consistent, centralized user-facing messages
+
+### 13.3 Auth Flow End-to-End
+
+**Sign-up:**
+```
+Form input (email, password, confirmPassword)
+  ↓ Zod client-side validation
+  ↓ handleSubmit → registerAction(parsed.data)
+    ↓ [Server Action] createServerCaller()
+      ↓ caller.auth.register(input)
+        ↓ tRPC procedure validates with signUpSchema
+          ↓ gatewayFetch("/auth/register", { email, password })
+            ↓ Mock gateway → { user: { id, email } } or error
+        ↓ Return result
+    ↓ If success: auto-sign-in via signIn("credentials", {...})
+      ↓ NextAuth authorize() → gatewayFetch("/auth/sign-in", {...})
+        ↓ JWT created, session set
+          ↓ Redirect to /dashboard
+    ↓ If error: display getErrorMessage(code)
+```
+
+**Sign-in:**
+```
+Form input (email, password)
+  ↓ Zod client-side validation
+  ↓ signIn("credentials", {...}) [unchanged]
+    ↓ NextAuth authorize() → gatewayFetch("/auth/sign-in", {...})
+      ↓ Mock gateway validates credentials
+        ↓ { accessToken, user: { id, email } }
+        ↓ JWT stored in HttpOnly cookie
+          ↓ Redirect to /dashboard
+```
+
+**Sign-out:**
+```
+Click SignOutButton
+  ↓ signOut({ callbackUrl: "/" }) [unchanged]
+    ↓ NextAuth clears session
+      ↓ Redirects to /
+```
+
+### 13.4 Error Handling
+
+All auth errors now route through `getErrorMessage(code: TRPC_ERROR_CODE_KEY)`:
+| Error Code | Message |
+|---|---|
+| `UNAUTHORIZED` | "Invalid email or password." |
+| `CONFLICT` | "An account with this email already exists." |
+| `BAD_REQUEST` | "The request was invalid. Please check your input." |
+| `INTERNAL_SERVER_ERROR` | "Something went wrong. Please try again later." |
+
+This centralizes error messaging per CLAUDE.md §7.6.
+
+### 13.5 Running Phase 3
+
+```bash
+pnpm dev              # Start dev server
+pnpm build            # Verify TypeScript compiles (no errors)
+pnpm lint             # Verify no ESLint warnings
+```
+
+**Test Flow:**
+1. **Sign-up with new email**: `/sign-up` → enter `newuser@velotrax.io` + password → auto-redirects to `/dashboard`
+2. **Sign-up with existing email**: `/sign-up` → enter `demo@velotrax.io` → error message appears inline (handled by `getErrorMessage`)
+3. **Sign-in with valid credentials**: `/sign-in` → `demo@velotrax.io` / `password123` → redirects to `/dashboard`
+4. **Sign-in with wrong password**: `/sign-in` → `demo@velotrax.io` / `wrongpassword` → error message "Invalid email or password."
+5. **Sign-out**: Click user section → Click "Sign Out" → redirects to `/`
+6. **Auth guard**: Access `/dashboard` while logged out → redirects to `/sign-in`
+
+### 13.6 Files Modified
+
+- `src/server/actions/auth.ts` — Fixed import, added `registerAction` and fixed `signOutAction`
+- `src/components/auth/sign-up-form.tsx` — Replaced raw fetch with `registerAction`
+
+### 13.7 Files NOT Changed
+
+- `src/components/auth/sign-in-form.tsx` — Works correctly via NextAuth
+- `src/components/auth/sign-out-button.tsx` — Works correctly
+- `src/server/trpc/procedures/auth.ts` — Correct, no changes needed
+- `src/lib/auth.ts`, `gateway.ts`, `validators/auth.ts`, `errors.ts` — All correct
+
+### 13.8 Ready for Phase 4
+
+Once `velotrax-gateway-go` is deployed:
+1. Disable `MOCK_GATEWAY=true` in `.env.local`
+2. Update `GATEWAY_URL` to point to real gateway
+3. Run `pnpm generate:types` to sync TypeScript types from Go OpenAPI spec
+4. No code changes needed — tRPC thin-proxy already works with real backend
+
+---
+
+## 14. Phase 3: Ready for Future Development
 
 The thin-proxy tRPC router and `gatewayFetch` helper are already designed to work seamlessly with the real backend.
