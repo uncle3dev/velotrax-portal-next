@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { type SignInResponse, type SignUpResponse, type Order, type UserProfile } from "@/types/index";
+import { type SignInResponse, type SignUpResponse, type Order, type UserProfile, type TrackingEvent } from "@/types/index";
 
 // Mock user database
 const mockUsers = [
@@ -70,6 +70,7 @@ const mockOrders: Order[] = [
 type SignInInput = { email: string; password: string };
 type SignUpInput = { email: string; password: string };
 type UserProfileInput = Record<string, never>;
+type TrackingInput = { orderId: string };
 
 export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<T> {
   // Simulate network delay
@@ -110,8 +111,93 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
     } as T;
   }
 
+  if (path === "/tracking") {
+    const input = body as TrackingInput;
+    // Find mock order
+    const order = mockOrders.find((o) => o.id === input.orderId);
+    if (!order) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+    }
+
+    // Generate mock tracking events based on order status
+    const events: TrackingEvent[] = generateTrackingEvents(order);
+
+    return {
+      orderId: order.id,
+      orderStatus: order.status,
+      events,
+    } as T;
+  }
+
   throw new TRPCError({
     code: "NOT_FOUND",
     message: `Mock endpoint not found: ${path}`,
   });
+}
+
+// Generate mock tracking events for demonstration
+function generateTrackingEvents(order: Order): TrackingEvent[] {
+  const baseDate = new Date(order.createdAt);
+  const baseHub = order.id.slice(-4); // Use last 4 chars of order ID as hub identifier
+
+  const events: TrackingEvent[] = [];
+
+  // Create 3 mock hubs based on order status
+  const hubs = [
+    { name: `Sorting Center ${baseHub}`, type: "sorting_center" as const, location: "Ho Chi Minh City" },
+    { name: `Delivery Hub A-${baseHub}`, type: "delivery_center" as const, location: "Go Vap District" },
+    { name: `Central Warehouse ${baseHub}`, type: "warehouse" as const, location: "Tan Phu District" },
+  ];
+
+  // Event 1: Order created / pending
+  events.push({
+    id: `evt-${order.id}-001`,
+    status: "pending",
+    description: "Order has been placed and is being processed",
+    location: hubs[0].location,
+    timestamp: baseDate.toISOString(),
+    hubName: hubs[0].name,
+    hubType: hubs[0].type,
+  });
+
+  // Always add processing event if order exists (for demo purposes)
+  const processingDate = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+  events.push({
+    id: `evt-${order.id}-002`,
+    status: "processing",
+    description: "Order is being prepared for shipment",
+    location: hubs[0].location,
+    timestamp: processingDate.toISOString(),
+    hubName: hubs[0].name,
+    hubType: hubs[0].type,
+  });
+
+  // Add shipped event for shipped/delivered orders
+  const shippedDate = new Date(processingDate.getTime() + 24 * 60 * 60 * 1000);
+  events.push({
+    id: `evt-${order.id}-003`,
+    status: "shipped",
+    description: "Order has been shipped and is in transit",
+    location: hubs[1].location,
+    timestamp: shippedDate.toISOString(),
+    hubName: hubs[1].name,
+    hubType: hubs[1].type,
+  });
+
+  if (order.status === "delivered") {
+    // Event 4: Delivered
+    const deliveredDate = new Date(shippedDate.getTime() + 48 * 60 * 60 * 1000);
+    events.push({
+      id: `evt-${order.id}-004`,
+      status: "delivered",
+      description: "Order has been successfully delivered",
+      location: hubs[2].location,
+      timestamp: deliveredDate.toISOString(),
+      hubName: hubs[2].name,
+      hubType: hubs[2].type,
+    });
+  }
+
+  // Sort events by timestamp descending (most recent first)
+  return events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }

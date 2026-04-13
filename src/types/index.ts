@@ -25,6 +25,35 @@ export type Order = {
   createdAt: string;
 };
 
+// Extended status for tracking view
+export type TrackingStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export type HubType = "hub" | "sorting_center" | "delivery_center" | "warehouse";
+
+export interface TrackingEvent {
+  id: string;
+  status: TrackingStatus;
+  description: string;
+  location: string;
+  timestamp: string;
+  hubName?: string;
+  hubType?: HubType;
+}
+
+export interface TrackingInfo {
+  orderId: string;
+  orderStatus: Order["status"] | "in_transit" | "out_for_delivery";
+  estimatedDelivery?: string;
+  events: TrackingEvent[];
+}
+
 export type UserProfile = {
   id: string;
   email: string;
