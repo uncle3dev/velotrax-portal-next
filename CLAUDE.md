@@ -379,7 +379,67 @@ pnpm dev              # Start dev server (http://localhost:3000)
 
 ---
 
-## 12. Phase 2: Ready for Future Development
+## 12. Phase 2: Left Sidebar Layout (✅ COMPLETED)
+
+### 12.1 Scope
+- [x] Replace top-bar navigation with fixed left sidebar (w-64)
+- [x] Reorganize navigation: Orders in sidebar nav, Profile + Sign Out in user section
+- [x] Implement collapsible user section (toggle to show/hide Profile & Sign Out)
+- [x] Layout: flex row with sidebar + scrollable main content
+- [x] Active link highlighting on Orders link (`usePathname()`)
+- [x] All Tailwind utilities (no external icon library)
+
+### 12.2 New Components
+
+**Sidebar Components:**
+- `src/components/dashboard/sidebar.tsx` — Server Component, sidebar shell (logo + nav + user)
+- `src/components/dashboard/sidebar-nav.tsx` — Client Component, navigation with active state
+- `src/components/dashboard/sidebar-user.tsx` — Client Component, collapsible user section
+
+**Modified:**
+- `src/app/(protected)/dashboard/layout.tsx` — Replaced top-header with flex-row sidebar layout
+
+### 12.3 Layout Structure
+
+```
+<div className="flex h-screen w-screen overflow-hidden bg-gray-50">
+  <aside className="w-64 h-full flex-col border-r bg-white">
+    [logo]
+    [nav: Orders link with active state]
+    [user section: avatar + email (toggle)]
+      └─ [expanded: Profile link + Sign Out button]
+  </aside>
+  <main className="flex-1 overflow-y-auto">
+    [dashboard content]
+  </main>
+</div>
+```
+
+### 12.4 User Section Toggle
+
+- **Collapsed:** Shows avatar (initials) + user name/email
+- **Expanded:** Shows Profile link and Sign Out button
+- Click avatar to toggle expand/collapse
+- Profile link auto-closes menu on click
+
+### 12.5 Running Phase 2
+
+```bash
+pnpm dev              # Start dev server
+```
+
+**Test Flow:**
+1. Sign in with `demo@velotrax.io` / `password123`
+2. Sidebar appears on left with "VeloTrax" logo
+3. Orders link in nav (click → active state blue highlight)
+4. User section at bottom: avatar + "Demo User" + email
+5. Click user section → expands to show Profile + Sign Out
+6. Click Profile → navigates to `/dashboard/profile`, closes menu
+7. Click Sign Out → redirects to `/`
+
+---
+
+## 13. Phase 3: Ready for Future Development
 
 Once the Go backend (`velotrax-gateway-go`) is ready:
 
