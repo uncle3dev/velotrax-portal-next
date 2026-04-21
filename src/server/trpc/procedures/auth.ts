@@ -7,13 +7,14 @@ export const authRouter = router({
   signIn: publicProcedure
     .input(signInSchema)
     .mutation(async ({ input }) => {
-      return gatewayFetch<SignInResponse>("/auth/sign-in", input);
+      return gatewayFetch<SignInResponse>("/v1/auth/sign-in", input);
     }),
 
   register: publicProcedure
     .input(signUpSchema)
     .mutation(async ({ input }) => {
-      return gatewayFetch<SignUpResponse>("/auth/register", {
+      return gatewayFetch<SignUpResponse>("/v1/auth/register", {
+        fullName: input.fullName,
         email: input.email,
         password: input.password,
       });

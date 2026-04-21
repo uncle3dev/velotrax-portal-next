@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type FormValues = {
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -21,6 +22,7 @@ type FormErrors = Partial<Record<keyof FormValues | "form", string>>;
 export function SignUpForm() {
   const router = useRouter();
   const [values, setValues] = useState<FormValues>({
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -82,6 +84,17 @@ export function SignUpForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <Input
+        id="fullName"
+        name="fullName"
+        type="text"
+        label="Full name"
+        placeholder="John Doe"
+        autoComplete="name"
+        value={values.fullName}
+        onChange={handleChange}
+        error={errors.fullName}
+      />
       <Input
         id="email"
         name="email"
