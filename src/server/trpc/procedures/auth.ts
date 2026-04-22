@@ -7,7 +7,7 @@ export const authRouter = router({
   signIn: publicProcedure
     .input(signInSchema)
     .mutation(async ({ input }) => {
-      return gatewayFetch<SignInResponse>("/v1/auth/sign-in", input);
+      return gatewayFetch<SignInResponse>("/v1/auth/login", input);
     }),
 
   register: publicProcedure

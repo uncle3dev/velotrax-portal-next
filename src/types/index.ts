@@ -7,6 +7,7 @@ export type SignInResponse = {
   user: {
     id: string;
     email: string;
+    roles: string[]; // e.g., ["customer", "admin"]
   };
 };
 

@@ -24,13 +24,16 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const response = await gatewayFetch<SignInResponse>(
-            "/auth/sign-in",
+            "/v1/auth/login",
             parsed.data,
           );
+          console.log("🚀 ~ response:", response)
+          
           return {
             id: response.user.id,
             email: response.user.email,
             accessToken: response.accessToken,
+            roles: response.user.roles,
           };
         } catch {
           return null;
