@@ -1,12 +1,16 @@
 import { Suspense } from "react";
 import { createServerCaller } from "@/server/trpc/client";
+import { withAuthNotFound } from "@/server/auth/with-auth-redirect";
 import { OrdersTable } from "@/components/dashboard/orders-table";
 import { OrdersTableSkeleton } from "@/components/dashboard/orders-table-skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 async function OrdersList() {
-  const caller = await createServerCaller();
-  const orders = await caller.orders.list();
+  const orders = await withAuthNotFound(async () => {
+    const caller = await createServerCaller();
+    return caller.orders.list();
+  });
+
   return <OrdersTable orders={orders} />;
 }
 

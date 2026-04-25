@@ -4,10 +4,12 @@
 
 export type SignInResponse = {
   accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
   user: {
     id: string;
     email: string;
-    roles: string[]; // e.g., ["customer", "admin"]
+    roles: string[];
   };
 };
 
@@ -18,12 +20,57 @@ export type SignUpResponse = {
   };
 };
 
+export type GatewayOrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+
+export type GatewayOrderAddress = {
+  street: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  country: string;
+};
+
+export type GatewayOrder = {
+  id: string;
+  user_id: string;
+  status: GatewayOrderStatus;
+  tracking_number: string;
+  origin_address: GatewayOrderAddress;
+  destination_address: GatewayOrderAddress;
+  estimated_delivery: string;
+  weight_kg: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrdersResponse = {
+  orders: GatewayOrder[];
+  page: number;
+  page_size: number;
+  total: number;
+};
+
+export type OrderAddress = {
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+};
+
+export type OrderStatus = Lowercase<GatewayOrderStatus>;
+
 export type Order = {
   id: string;
-  customerName: string;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  totalAmount: number;
+  userId: string;
+  status: OrderStatus;
+  trackingNumber: string;
+  originAddress: OrderAddress;
+  destinationAddress: OrderAddress;
+  estimatedDelivery: string;
+  weightKg: number;
   createdAt: string;
+  updatedAt: string;
 };
 
 // Extended status for tracking view

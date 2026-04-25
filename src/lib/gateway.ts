@@ -22,6 +22,18 @@ export async function gatewayFetch<T>(
 
   if (!res.ok) {
     const message = await res.text();
+    if (res.status === 404) {
+      throw new TRPCError({ code: "NOT_FOUND", message });
+    }
+
+    if (res.status === 401) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message });
+    }
+
+    if (res.status === 403) {
+      throw new TRPCError({ code: "FORBIDDEN", message });
+    }
+
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
   }
 

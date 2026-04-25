@@ -1,11 +1,15 @@
 import { Suspense } from "react";
 import { createServerCaller } from "@/server/trpc/client";
+import { withAuthNotFound } from "@/server/auth/with-auth-redirect";
 import { UserProfileCard } from "@/components/dashboard/user-profile-card";
 import { Card, CardContent } from "@/components/ui/card";
 
 async function ProfileContent() {
-  const caller = await createServerCaller();
-  const profile = await caller.user.profile();
+  const profile = await withAuthNotFound(async () => {
+    const caller = await createServerCaller();
+    return caller.user.profile();
+  });
+
   return <UserProfileCard profile={profile} />;
 }
 

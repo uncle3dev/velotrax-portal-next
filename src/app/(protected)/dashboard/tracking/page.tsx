@@ -1,12 +1,16 @@
 import { Suspense } from "react";
 import { createServerCaller } from "@/server/trpc/client";
+import { withAuthNotFound } from "@/server/auth/with-auth-redirect";
 import { TrackingPageContent } from "@/components/dashboard/tracking-page";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 async function TrackingContent({ searchParams }: { searchParams?: { orderId?: string } }) {
-  const caller = await createServerCaller();
   const orderId = searchParams?.orderId || "ORD-001"; // Default to first mock order
-  const tracking = await caller.tracking.get({ orderId });
+  const tracking = await withAuthNotFound(async () => {
+    const caller = await createServerCaller();
+    return caller.tracking.get({ orderId });
+  });
+
   return <TrackingPageContent tracking={tracking} orderId={orderId} />;
 }
 

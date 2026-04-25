@@ -4,7 +4,7 @@ export function OrdersTableSkeleton() {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            {["Order ID", "Customer", "Status", "Amount", "Date"].map((col) => (
+            {["Order ID", "Tracking", "Status", "Origin", "Destination", "ETA", "Weight"].map((col) => (
               <th
                 key={col}
                 className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
@@ -27,10 +27,16 @@ export function OrdersTableSkeleton() {
                 <div className="h-5 w-20 animate-pulse rounded-full bg-gray-200" />
               </td>
               <td className="px-6 py-4">
-                <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
+                <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
+              </td>
+              <td className="px-6 py-4">
+                <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
               </td>
               <td className="px-6 py-4">
                 <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+              </td>
+              <td className="px-6 py-4">
+                <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
               </td>
             </tr>
           ))}

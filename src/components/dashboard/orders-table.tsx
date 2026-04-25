@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { type Order } from "@/types/index";
 
-type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+type OrderStatus = Order["status"];
 
 type StatusBadgeProps = {
   status: OrderStatus;
@@ -28,8 +29,6 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
-import { type Order } from "@/types/index";
-
 type OrdersTableProps = {
   orders: Order[];
 };
@@ -55,16 +54,22 @@ export function OrdersTable({ orders }: OrdersTableProps) {
               Order ID
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              Customer
+              Tracking
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Status
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              Amount
+              Origin
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              Date
+              Destination
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              ETA
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              Weight
             </th>
           </tr>
         </thead>
@@ -75,23 +80,36 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                 {order.id}
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                {order.customerName}
+                {order.trackingNumber}
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 <StatusBadge status={order.status} />
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(order.totalAmount)}
+              <td className="px-6 py-4 text-sm text-gray-900">
+                <div className="leading-5">
+                  <div className="font-medium">{order.originAddress.street}</div>
+                  <div className="text-gray-500">
+                    {order.originAddress.city}, {order.originAddress.province}
+                  </div>
+                </div>
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-900">
+                <div className="leading-5">
+                  <div className="font-medium">{order.destinationAddress.street}</div>
+                  <div className="text-gray-500">
+                    {order.destinationAddress.city}, {order.destinationAddress.province}
+                  </div>
+                </div>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                {new Date(order.createdAt).toLocaleDateString("en-US", {
+                {new Date(order.estimatedDelivery).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "short",
                   day: "numeric",
                 })}
+              </td>
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                {order.weightKg.toFixed(1)} kg
               </td>
             </tr>
           ))}

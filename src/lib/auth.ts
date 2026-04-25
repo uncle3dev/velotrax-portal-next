@@ -27,7 +27,6 @@ export const authOptions: NextAuthOptions = {
             "/v1/auth/login",
             parsed.data,
           );
-          console.log("🚀 ~ response:", response)
           
           return {
             id: response.user.id,

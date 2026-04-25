@@ -1,5 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { type SignInResponse, type SignUpResponse, type Order, type UserProfile, type TrackingEvent } from "@/types/index";
+import {
+  type GatewayOrder,
+  type SignInResponse,
+  type SignUpResponse,
+  type TrackingEvent,
+  type UserProfile,
+} from "@/types/index";
 
 // Mock user database
 const mockUsers = [
@@ -8,62 +14,78 @@ const mockUsers = [
 ];
 
 // Mock orders
-const mockOrders: Order[] = [
+const mockOrders: GatewayOrder[] = [
   {
     id: "ORD-001",
-    customerName: "John Doe",
-    status: "pending",
-    totalAmount: 299.99,
-    createdAt: "2024-04-10T10:30:00Z",
+    user_id: "user-1",
+    status: "PENDING",
+    tracking_number: "VTX-001",
+    origin_address: {
+      street: "1 Warehouse Ave",
+      city: "Ho Chi Minh City",
+      province: "Ho Chi Minh",
+      postal_code: "700000",
+      country: "VN",
+    },
+    destination_address: {
+      street: "99 Customer St",
+      city: "Da Nang",
+      province: "Da Nang",
+      postal_code: "550000",
+      country: "VN",
+    },
+    estimated_delivery: "2024-04-12T10:30:00Z",
+    weight_kg: 2.5,
+    created_at: "2024-04-10T10:30:00Z",
+    updated_at: "2024-04-10T12:00:00Z",
   },
   {
     id: "ORD-002",
-    customerName: "Jane Smith",
-    status: "processing",
-    totalAmount: 149.99,
-    createdAt: "2024-04-09T14:15:00Z",
+    user_id: "user-2",
+    status: "PROCESSING",
+    tracking_number: "VTX-002",
+    origin_address: {
+      street: "2 Warehouse Ave",
+      city: "Ho Chi Minh City",
+      province: "Ho Chi Minh",
+      postal_code: "700000",
+      country: "VN",
+    },
+    destination_address: {
+      street: "88 Customer St",
+      city: "Da Nang",
+      province: "Da Nang",
+      postal_code: "550000",
+      country: "VN",
+    },
+    estimated_delivery: "2024-04-13T14:15:00Z",
+    weight_kg: 1.2,
+    created_at: "2024-04-09T14:15:00Z",
+    updated_at: "2024-04-09T16:00:00Z",
   },
   {
     id: "ORD-003",
-    customerName: "Bob Johnson",
-    status: "shipped",
-    totalAmount: 450.00,
-    createdAt: "2024-04-08T09:00:00Z",
-  },
-  {
-    id: "ORD-004",
-    customerName: "Alice Williams",
-    status: "delivered",
-    totalAmount: 199.99,
-    createdAt: "2024-04-07T16:45:00Z",
-  },
-  {
-    id: "ORD-005",
-    customerName: "Charlie Brown",
-    status: "cancelled",
-    totalAmount: 89.99,
-    createdAt: "2024-04-06T11:20:00Z",
-  },
-  {
-    id: "ORD-006",
-    customerName: "Diana Prince",
-    status: "pending",
-    totalAmount: 599.99,
-    createdAt: "2024-04-05T13:00:00Z",
-  },
-  {
-    id: "ORD-007",
-    customerName: "Eve Martinez",
-    status: "shipped",
-    totalAmount: 249.99,
-    createdAt: "2024-04-04T08:30:00Z",
-  },
-  {
-    id: "ORD-008",
-    customerName: "Frank Thompson",
-    status: "delivered",
-    totalAmount: 379.99,
-    createdAt: "2024-04-03T15:10:00Z",
+    user_id: "user-1",
+    status: "SHIPPED",
+    tracking_number: "VTX-003",
+    origin_address: {
+      street: "3 Warehouse Ave",
+      city: "Ho Chi Minh City",
+      province: "Ho Chi Minh",
+      postal_code: "700000",
+      country: "VN",
+    },
+    destination_address: {
+      street: "77 Customer St",
+      city: "Da Nang",
+      province: "Da Nang",
+      postal_code: "550000",
+      country: "VN",
+    },
+    estimated_delivery: "2024-04-14T09:00:00Z",
+    weight_kg: 3,
+    created_at: "2024-04-08T09:00:00Z",
+    updated_at: "2024-04-08T11:00:00Z",
   },
 ];
 
@@ -76,7 +98,7 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  if (path === "/auth/sign-in") {
+  if (path === "/auth/sign-in" || path === "/v1/auth/login") {
     const input = body as SignInInput;
     const user = mockUsers.find((u) => u.email === input.email && u.password === input.password);
     if (!user) {
@@ -88,7 +110,7 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
     } as T;
   }
 
-  if (path === "/auth/register") {
+  if (path === "/auth/register" || path === "/v1/auth/register") {
     const input = body as SignUpInput;
     const newId = `user-${Date.now()}`;
     return {
@@ -96,8 +118,13 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
     } as T;
   }
 
-  if (path === "/orders") {
-    return mockOrders as T;
+  if (path === "/orders" || path === "/v1/orders") {
+    return {
+      orders: mockOrders,
+      page: 1,
+      page_size: mockOrders.length,
+      total: mockOrders.length,
+    } as T;
   }
 
   if (path === "/user/profile") {
@@ -111,7 +138,7 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
     } as T;
   }
 
-  if (path === "/tracking") {
+  if (path === "/tracking" || path === "/v1/tracking") {
     const input = body as TrackingInput;
     // Find mock order
     const order = mockOrders.find((o) => o.id === input.orderId);
@@ -124,7 +151,7 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
 
     return {
       orderId: order.id,
-      orderStatus: order.status,
+      orderStatus: order.status.toLowerCase(),
       events,
     } as T;
   }
@@ -135,9 +162,8 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
   });
 }
 
-// Generate mock tracking events for demonstration
-function generateTrackingEvents(order: Order): TrackingEvent[] {
-  const baseDate = new Date(order.createdAt);
+function generateTrackingEvents(order: GatewayOrder): TrackingEvent[] {
+  const baseDate = new Date(order.created_at);
   const baseHub = order.id.slice(-4); // Use last 4 chars of order ID as hub identifier
 
   const events: TrackingEvent[] = [];
@@ -184,7 +210,7 @@ function generateTrackingEvents(order: Order): TrackingEvent[] {
     hubType: hubs[1].type,
   });
 
-  if (order.status === "delivered") {
+  if (order.status === "DELIVERED") {
     // Event 4: Delivered
     const deliveredDate = new Date(shippedDate.getTime() + 48 * 60 * 60 * 1000);
     events.push({
