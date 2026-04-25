@@ -2,22 +2,32 @@ import { TRPCError } from "@trpc/server";
 import { env } from "@/lib/env";
 import { mockGatewayFetch } from "@/lib/mock-gateway";
 
+export type GatewayMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+type GatewayFetchOptions = {
+  method?: GatewayMethod;
+};
+
 export async function gatewayFetch<T>(
   path: string,
-  body: unknown,
+  body?: unknown,
   token?: string,
+  options?: GatewayFetchOptions,
 ): Promise<T> {
+  const method = options?.method ?? "POST";
+
   if (env.MOCK_GATEWAY === "true") {
-    return mockGatewayFetch<T>(path, body);
+    return mockGatewayFetch<T>(path, body, token, method);
   }
 
+  const hasBody = body !== undefined && method !== "GET";
   const res = await fetch(`${env.GATEWAY_URL}${path}`, {
-    method: "POST",
+    method,
     headers: {
-      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
     },
-    body: JSON.stringify(body),
+    body: hasBody ? JSON.stringify(body) : undefined,
   });
 
   if (!res.ok) {

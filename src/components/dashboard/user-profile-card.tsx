@@ -6,7 +6,8 @@ type UserProfileCardProps = {
 };
 
 export function UserProfileCard({ profile }: UserProfileCardProps) {
-  const initials = profile.name
+  const name = profile.name ?? profile.fullName ?? profile.email;
+  const initials = (name ?? "?")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -24,7 +25,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500">Name</p>
-            <p className="text-lg font-medium text-gray-900">{profile.name}</p>
+            <p className="text-lg font-medium text-gray-900">{name ?? "—"}</p>
           </div>
         </div>
 
@@ -37,11 +38,13 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
             <div>
               <p className="text-sm text-gray-500">Member since</p>
               <p className="text-base text-gray-900">
-                {new Date(profile.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                {profile.createdAt
+                  ? new Date(profile.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "—"}
               </p>
             </div>
           </div>

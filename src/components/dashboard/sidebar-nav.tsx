@@ -11,7 +11,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Orders", href: "/dashboard" },
-  { label: "Tracking", href: "/dashboard/tracking" },
+  { label: "Tracking", href: "/tracking" },
 ];
 
 export function SidebarNav() {

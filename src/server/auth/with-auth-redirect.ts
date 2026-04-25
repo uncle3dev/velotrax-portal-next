@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export async function withAuthNotFound<T>(task: () => Promise<T>): Promise<T> {
   try {
@@ -7,10 +7,14 @@ export async function withAuthNotFound<T>(task: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (
       error instanceof TRPCError &&
-      (error.code === "UNAUTHORIZED" ||
-        error.code === "FORBIDDEN" ||
-        error.code === "NOT_FOUND" ||
-        error.code === "INTERNAL_SERVER_ERROR")
+      (error.code === "UNAUTHORIZED" || error.code === "FORBIDDEN")
+    ) {
+      redirect("/sign-in");
+    }
+
+    if (
+      error instanceof TRPCError &&
+      (error.code === "NOT_FOUND" || error.code === "INTERNAL_SERVER_ERROR")
     ) {
       notFound();
     }

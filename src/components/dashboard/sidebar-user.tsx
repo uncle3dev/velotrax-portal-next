@@ -49,7 +49,7 @@ export function SidebarUser({ name, email }: SidebarUserProps) {
         <div className="border-t border-gray-100 bg-gray-50 px-3 py-2 space-y-2">
           {/* Profile link */}
           <Link
-            href="/dashboard/profile"
+            href="/profile"
             onClick={() => setIsOpen(false)}
             className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >

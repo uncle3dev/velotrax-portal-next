@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
-import { TrackingInfo, type TrackingEvent } from "@/types/index";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { TrackingInfo } from "@/types/index";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface TrackingPageProps {
   tracking: TrackingInfo | null;
-  orderId: string;
+  initialOrderId: string;
 }
 
 interface TrackingStep {
@@ -19,43 +20,55 @@ interface TrackingStep {
   current: boolean;
 }
 
-export function TrackingPageContent({ tracking, orderId }: TrackingPageProps) {
-  // Mock order input if no tracking data
-  const displayTracking = tracking || {
-    orderId: orderId || "ORD-000",
-    orderStatus: "pending",
-    events: [],
-  };
+export function TrackingPageContent({ tracking, initialOrderId }: TrackingPageProps) {
+  const router = useRouter();
+  const [orderId, setOrderId] = useState(initialOrderId);
 
-  const steps = useMemo(() => createTrackingSteps(displayTracking), [displayTracking]);
+  useEffect(() => {
+    setOrderId(initialOrderId);
+  }, [initialOrderId]);
+
+  const steps = useMemo(() => (tracking ? createTrackingSteps(tracking) : []), [tracking]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedOrderId = orderId.trim();
+    if (!trimmedOrderId) {
+      return;
+    }
+
+    router.push(`/tracking?orderId=${encodeURIComponent(trimmedOrderId)}`);
+  }
 
   return (
     <div className="p-6">
       {/* Order ID Input */}
       <div className="mb-6">
-        <label htmlFor="order-id" className="block text-sm font-medium text-gray-700">
-          Enter Order ID
-        </label>
-        <div className="mt-1 flex rounded-md shadow-sm">
-          <input
-            type="text"
-            id="order-id"
-            placeholder="e.g., ORD-001"
-            defaultValue={orderId}
-            className="block w-full rounded-md border-gray-300 pl-3 pr-12 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm border"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const value = (e.target as HTMLInputElement).value;
-                if (value) {
-                  window.location.href = `/dashboard/tracking?orderId=${value}`;
-                }
-              }
-            }}
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="order-id" className="block text-sm font-medium text-gray-700">
+            Enter Order ID
+          </label>
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <input
+              type="text"
+              id="order-id"
+              value={orderId}
+              onChange={(event) => setOrderId(event.target.value)}
+              placeholder="e.g., ORD-001"
+              className="block w-full rounded-l-md border-gray-300 pl-3 pr-12 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm border"
+            />
+            <button
+              type="submit"
+              className="rounded-r-md border border-l-0 border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Track
+            </button>
+          </div>
+        </form>
       </div>
 
-      {steps.length === 0 ? (
+      {!tracking ? (
         <div className="text-center py-12">
           <p className="text-gray-500">Enter an order ID to view tracking information.</p>
         </div>
@@ -64,9 +77,9 @@ export function TrackingPageContent({ tracking, orderId }: TrackingPageProps) {
           {/* Status Header */}
           <div className="flex items-center justify-between border-b border-gray-200 pb-3">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Order {displayTracking.orderId}</h3>
+              <h3 className="text-base font-semibold text-gray-900">Order {tracking.orderId}</h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Status: <span className="font-medium capitalize">{displayTracking.orderStatus.replace(/_/g, " ")}</span>
+                Status: <span className="font-medium capitalize">{tracking.orderStatus.replace(/_/g, " ")}</span>
               </p>
             </div>
             <div className="text-right">
@@ -159,6 +172,7 @@ export function TrackingPageContent({ tracking, orderId }: TrackingPageProps) {
 function createTrackingSteps(tracking: TrackingInfo): TrackingStep[] {
   const statusLabels: Record<string, string> = {
     pending: "Order Placed",
+    confirmed: "Confirmed",
     processing: "Processing",
     shipped: "Shipped",
     in_transit: "In Transit",
@@ -169,6 +183,7 @@ function createTrackingSteps(tracking: TrackingInfo): TrackingStep[] {
 
   const statusDescriptions: Record<string, string> = {
     pending: "Your order has been received and is being processed.",
+    confirmed: "Your order has been confirmed and is awaiting processing.",
     processing: "Your order is being prepared for shipment.",
     shipped: "Your order has been shipped and is on its way.",
     in_transit: "Your order is currently in transit to your location.",
@@ -197,31 +212,20 @@ function createTrackingSteps(tracking: TrackingInfo): TrackingStep[] {
 
   // If no events, create default steps based on order status
   if (steps.length === 0 && tracking.orderId) {
-    const baseStatuses: TrackingStep[] = [
-      { status: "pending", label: statusLabels["pending"], description: statusDescriptions["pending"], completed: tracking.orderStatus === "pending", current: tracking.orderStatus === "pending" },
-      { status: "processing", label: statusLabels["processing"], description: statusDescriptions["processing"], completed: ["processing", "shipped", "in_transit", "out_for_delivery", "delivered"].includes(tracking.orderStatus), current: tracking.orderStatus === "processing" },
-      { status: "shipped", label: statusLabels["shipped"], description: statusDescriptions["shipped"], completed: ["shipped", "in_transit", "out_for_delivery", "delivered"].includes(tracking.orderStatus), current: tracking.orderStatus === "shipped" },
-      { status: "in_transit", label: statusLabels["in_transit"], description: statusDescriptions["in_transit"], completed: ["in_transit", "out_for_delivery", "delivered"].includes(tracking.orderStatus), current: tracking.orderStatus === "in_transit" },
-      { status: "out_for_delivery", label: statusLabels["out_for_delivery"], description: statusDescriptions["out_for_delivery"], completed: ["out_for_delivery", "delivered"].includes(tracking.orderStatus), current: tracking.orderStatus === "out_for_delivery" },
-      { status: "delivered", label: statusLabels["delivered"], description: statusDescriptions["delivered"], completed: tracking.orderStatus === "delivered", current: tracking.orderStatus === "delivered" },
-    ];
+    const orderedStatuses = ["pending", "confirmed", "in_transit", "out_for_delivery", "delivered", "cancelled"] as const;
+    const currentIndex = orderedStatuses.indexOf(tracking.orderStatus as (typeof orderedStatuses)[number]);
 
-    // Mark previous steps as completed
-    let foundCurrent = false;
-    baseStatuses.forEach((step) => {
-      if (foundCurrent) {
-        step.completed = true;
-      }
-      if (step.current) {
-        foundCurrent = true;
-      }
-    });
-
-    return baseStatuses;
+    return orderedStatuses.map((status, index) => ({
+      status,
+      label: statusLabels[status],
+      description: statusDescriptions[status],
+      completed: currentIndex >= 0 && index <= currentIndex,
+      current: index === currentIndex,
+    }));
   }
 
   // Fill in missing status steps
-  const allStatuses = ["pending", "processing", "shipped", "in_transit", "out_for_delivery", "delivered"];
+  const allStatuses = ["pending", "confirmed", "processing", "shipped", "in_transit", "out_for_delivery", "delivered", "cancelled"];
   const existingStatuses = steps.map((s) => s.status);
   const missingStatuses = allStatuses.filter((s) => !existingStatuses.includes(s));
 

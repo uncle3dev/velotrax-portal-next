@@ -5,7 +5,7 @@ import { type TrackingInfo } from "@/types/index";
 
 export const trackingRouter = router({
   get: protectedProcedure
-    .input(z.object({ orderId: z.string() }))
+    .input(z.object({ orderId: z.string().trim().min(1) }))
     .query(async ({ input, ctx }) => {
       return gatewayFetch<TrackingInfo>("/tracking", input, ctx.accessToken);
     }),

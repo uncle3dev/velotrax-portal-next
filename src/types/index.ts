@@ -20,7 +20,16 @@ export type SignUpResponse = {
   };
 };
 
-export type GatewayOrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+export const GATEWAY_ORDER_STATUS = {
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  IN_TRANSIT: "IN_TRANSIT",
+  OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
+  DELIVERED: "DELIVERED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type GatewayOrderStatus = (typeof GATEWAY_ORDER_STATUS)[keyof typeof GATEWAY_ORDER_STATUS];
 
 export type GatewayOrderAddress = {
   street: string;
@@ -76,6 +85,7 @@ export type Order = {
 // Extended status for tracking view
 export type TrackingStatus =
   | "pending"
+  | "confirmed"
   | "processing"
   | "shipped"
   | "in_transit"
@@ -105,6 +115,15 @@ export interface TrackingInfo {
 export type UserProfile = {
   id: string;
   email: string;
-  name: string;
-  createdAt: string;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  role?: string;
+  roles?: string[];
+  company?: string;
+  title?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
 };

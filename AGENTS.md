@@ -35,7 +35,8 @@ Tài liệu ngắn cho agent và người mới làm việc trong repo này.
 
 - Dữ liệu protected nên đi qua `createServerCaller()`
 - Lỗi auth nên được xử lý ở tầng page/server wrapper hoặc layout, không để bung ra UI
-- Nếu cần fail-safe, ưu tiên trả về `notFound()` hơn là crash app
+- Với `UNAUTHORIZED`/`FORBIDDEN`, ưu tiên redirect về `/sign-in`; `NOT_FOUND` thì dùng `notFound()`
+- Các route protected có thể nằm ngoài `dashboard` nếu vẫn đi qua `src/app/(protected)`
 
 ## Khi làm việc với gateway
 
@@ -48,4 +49,3 @@ Tài liệu ngắn cho agent và người mới làm việc trong repo này.
 - Kiểm tra route đã tồn tại chưa
 - Kiểm tra có cần cập nhật `README.md` hoặc type chung không
 - Giữ naming nhất quán với phần đang có trong repo
-

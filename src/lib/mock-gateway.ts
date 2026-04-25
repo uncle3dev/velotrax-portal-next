@@ -9,8 +9,32 @@ import {
 
 // Mock user database
 const mockUsers = [
-  { id: "user-1", email: "demo@velotrax.io", password: "password123", name: "Demo User" },
-  { id: "user-2", email: "admin@velotrax.io", password: "password123", name: "Admin User" },
+  {
+    id: "user-1",
+    email: "demo@velotrax.io",
+    password: "password123",
+    name: "Demo User",
+    phone: "+84 901 234 567",
+    role: "Customer",
+    company: "Demo Logistics Co.",
+    title: "Operations Lead",
+    avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Demo%20User",
+    createdAt: "2024-01-15T00:00:00Z",
+    updatedAt: "2024-04-20T08:30:00Z",
+  },
+  {
+    id: "user-2",
+    email: "admin@velotrax.io",
+    password: "password123",
+    name: "Admin User",
+    phone: "+84 902 345 678",
+    role: "Admin",
+    company: "VeloTrax",
+    title: "Platform Admin",
+    avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Admin%20User",
+    createdAt: "2024-01-12T00:00:00Z",
+    updatedAt: "2024-04-21T10:15:00Z",
+  },
 ];
 
 // Mock orders
@@ -42,7 +66,7 @@ const mockOrders: GatewayOrder[] = [
   {
     id: "ORD-002",
     user_id: "user-2",
-    status: "PROCESSING",
+    status: "CONFIRMED",
     tracking_number: "VTX-002",
     origin_address: {
       street: "2 Warehouse Ave",
@@ -66,7 +90,7 @@ const mockOrders: GatewayOrder[] = [
   {
     id: "ORD-003",
     user_id: "user-1",
-    status: "SHIPPED",
+    status: "DELIVERED",
     tracking_number: "VTX-003",
     origin_address: {
       street: "3 Warehouse Ave",
@@ -94,7 +118,52 @@ type SignUpInput = { email: string; password: string };
 type UserProfileInput = Record<string, never>;
 type TrackingInput = { orderId: string };
 
-export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<T> {
+type MockHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+function getMockUserFromToken(token?: string) {
+  const tokenUserId = token?.startsWith("mock-token-") ? token.replace("mock-token-", "") : undefined;
+  return mockUsers.find((user) => user.id === tokenUserId) ?? mockUsers[0];
+}
+
+function toUserProfile(user: (typeof mockUsers)[number]): UserProfile {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+    company: user.company,
+    title: user.title,
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+function applyProfilePatch(user: (typeof mockUsers)[number], body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return user;
+  }
+
+  const patch = body as Record<string, unknown>;
+  if (typeof patch.name === "string") user.name = patch.name;
+  if (typeof patch.email === "string") user.email = patch.email;
+  if (typeof patch.phone === "string") user.phone = patch.phone;
+  if (typeof patch.role === "string") user.role = patch.role;
+  if (typeof patch.company === "string") user.company = patch.company;
+  if (typeof patch.title === "string") user.title = patch.title;
+  if (typeof patch.avatarUrl === "string") user.avatarUrl = patch.avatarUrl;
+  user.updatedAt = new Date().toISOString();
+
+  return user;
+}
+
+export async function mockGatewayFetch<T>(
+  path: string,
+  body: unknown,
+  token?: string,
+  method: MockHttpMethod = "POST",
+): Promise<T> {
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -127,15 +196,16 @@ export async function mockGatewayFetch<T>(path: string, body: unknown): Promise<
     } as T;
   }
 
-  if (path === "/user/profile") {
-    // For mock, just return first user. In real implementation, would decode token to get user ID.
-    const user = mockUsers[0];
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      createdAt: "2024-01-15T00:00:00Z",
-    } as T;
+  if (path === "/profile" || path === "/v1/profile" || path === "/v1/user/profile") {
+    const user = getMockUserFromToken(token);
+
+    if (method === "GET") {
+      return toUserProfile(user) as T;
+    }
+
+    if (method === "PUT") {
+      return toUserProfile(applyProfilePatch(user, body)) as T;
+    }
   }
 
   if (path === "/tracking" || path === "/v1/tracking") {

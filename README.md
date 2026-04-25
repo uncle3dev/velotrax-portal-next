@@ -5,7 +5,7 @@ VeloTrax Portal Next là frontend Next.js cho hệ thống theo dõi và quản 
 ## Tổng quan kiến trúc
 
 - Trang public nằm trong `src/app/(public)`
-- Khu vực đã đăng nhập nằm trong `src/app/(protected)/dashboard`
+- Khu vực đã đăng nhập nằm trong `src/app/(protected)`
 - Session được quản lý bằng NextAuth JWT
 - Dữ liệu nghiệp vụ đi qua tRPC rồi mới tới Go gateway
 - `gatewayFetch()` là lớp gọi HTTP chung để nói chuyện với gateway
@@ -36,8 +36,19 @@ Luồng auth:
   - Danh sách orders
 - `/dashboard/profile`
   - Thông tin tài khoản
-- `/dashboard/tracking`
+- `/tracking`
   - Theo dõi trạng thái đơn hàng
+
+### Protected pages khác
+
+- `/profile`
+  - Trang profile riêng của user
+
+Ghi chú:
+
+- `src/app/(protected)` là lớp bảo vệ chung cho các trang đã đăng nhập
+- `src/app/(protected)/dashboard` là shell riêng cho dashboard
+- `/tracking` là route protected riêng, dùng shell sidebar giống dashboard nhưng không nằm trong dashboard group
 
 ## Tech stack
 
@@ -129,7 +140,7 @@ Khi `MOCK_GATEWAY=true`, app sẽ dùng `src/lib/mock-gateway.ts` thay vì gọi
 - `createContext()` dùng `getServerSession(authOptions)` để lấy session trên server
 - `protectedProcedure` forward `accessToken` sang gateway
 
-## Data flow trong dashboard
+## Data flow trong protected pages
 
 - Page server component gọi `createServerCaller()`
 - tRPC procedure validate input bằng Zod
@@ -148,7 +159,8 @@ Khi `MOCK_GATEWAY=true`, app sẽ dùng `src/lib/mock-gateway.ts` thay vì gọi
 ## Ghi chú quan trọng
 
 - `middleware.ts` chặn route dashboard cho user chưa đăng nhập
-- `src/server/auth/with-auth-redirect.ts` là helper dùng chung (`withAuthNotFound`) để biến lỗi auth thành trang không tồn tại
+- `src/app/(protected)` chặn các trang protected ở tầng layout
+- `src/server/auth/with-auth-redirect.ts` là helper dùng chung; `UNAUTHORIZED` và `FORBIDDEN` sẽ đá về `/sign-in`, còn `NOT_FOUND` vẫn `notFound()`
 - `src/server/trpc/procedures/orders.ts` hiện normalize payload orders từ gateway trước khi trả cho UI
 
 ## Cấu trúc thư mục chính
